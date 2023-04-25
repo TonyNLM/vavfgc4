@@ -93,12 +93,30 @@ function newMessage(plaintext, sharedsecret, peerid, keyid) {
     return message
 }
 
-var API_URL = "http://vml1wk063.cse.ust.hk:8080"
+var API_URL = "https://vml1wk063.cse.ust.hk:8080"
+
+import fs from 'fs'
+import https from "https";
+
+axios.defaults.httpsAgent = new https.Agent({
+  requestCert:true,
+  rejectUnauthorized: false,
+  cert: fs.readFileSync("./cert.pem"),
+  ca: fs.readFileSync("./cert.pem"),
+  key:fs.readFileSync("./key.pem")
+})
 
 /** takes address:string, returns a list of messages */
 async function getMessage(address) {
   try {
-    const response = await axios.get(API_URL+'/client/message?address='+address);
+    var httpsAgent = new https.Agent({
+      requestCert: true,
+      rejectUnauthorized: false,
+      cert: fs.readFileSync("./cert.pem"),
+      ca: fs.readFileSync("./cert.pem"),
+      key: fs.readFileSync("./key.pem")
+    })
+    const response = await axios.get(API_URL+'/client/message?address='+address)
     if (response.status==200){
       return response.data //axios already return JSON. This is a list of messages with this address
     }
@@ -108,6 +126,8 @@ async function getMessage(address) {
       else{
         console.error(error.response)
       }
+    }else{
+      console.error(error)
     }
   }
 }
@@ -141,7 +161,7 @@ console.log(newMessage("",sharedsecret,peerid,keyid))
 console.log()
 
 console.log(aes256Encrypt("testing", sharedsecret))
-console.log(aes256Decrypt("U2FsdGVkX1909Pte89XbubHf2DvgRDgHBF1EaDxcHQI=",sharedsecret))
+console.log(aes256Decrypt(btoa("U2FsdGVkX1+isvUeh6PtQLknM+4WbILno35FgKFYcZc="),sharedsecret))
 
 console.log()
 
@@ -154,6 +174,5 @@ console.log(ms)
 var m = newMessage("testing", sharedsecret, peerid, keyid)
 console.log(m)
 
-console.log(atob(m.content))
 var res = await postMessage(m)
 console.log(res)
